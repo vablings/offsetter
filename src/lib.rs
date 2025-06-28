@@ -31,13 +31,9 @@ macro_rules! offset {
     };
 }
 
-
-#![no_std]
-pub extern crate paste;
-
 #[macro_export]
 macro_rules! offset_debug {
-    // Final struct definition
+    // Final struct
     (@build ($current_offset:expr) -> { $(#[$attr:meta])* $vis:vis struct $name:ident $(($pad_amount:expr, $vis_field:vis $id:ident : $ty:ty))* }) => {
         $crate::paste::paste! {
             #[repr(C, packed)]
@@ -47,25 +43,24 @@ macro_rules! offset_debug {
         }
     };
 
-    // Add more fields with const/expr offset
-    (@build ($current_offset:expr, $offset:expr $vis_field:vis $id:ident : $ty:ty $(,)?) -> { $($output:tt)* }) => {
+    // Add fields (offset must be in parentheses for clean parsing)
+    (@build ($current_offset:expr, ($offset:expr) $vis_field:vis $id:ident : $ty:ty $(,)?) -> { $($output:tt)* }) => {
         offset_debug!(@build ($offset + core::mem::size_of::<$ty>()) -> {
             $($output)* ($offset - $current_offset, $vis_field $id : $ty)
         });
     };
 
-    (@build ($current_offset:expr, $offset:expr $vis_field:vis $id:ident : $ty:ty, $($rest:tt)+) -> { $($output:tt)* }) => {
+    (@build ($current_offset:expr, ($offset:expr) $vis_field:vis $id:ident : $ty:ty, $($rest:tt)+) -> { $($output:tt)* }) => {
         offset_debug!(@build ($offset + core::mem::size_of::<$ty>(), $($rest)+) -> {
             $($output)* ($offset - $current_offset, $vis_field $id : $ty)
         });
     };
 
-    // Entry point
+    // Entry
     ($(#[$attr:meta])* $vis:vis struct $name:ident { $($body:tt)* }) => {
         offset_debug!(@build (0, $($body)*) -> { $(#[$attr])* $vis struct $name });
     };
 }
-
 
 #[cfg(feature = "checked")]
 #[macro_export]
