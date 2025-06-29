@@ -41,6 +41,14 @@ macro_rules! offset_debug {
                 $([<_pad_ $id>]: [u8; $pad_amount], $vis_field $id : $ty),*
             }
         }
+
+        impl core::fmt::Debug for $name {
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                f.debug_struct(stringify!($name))
+                 $(.field(stringify!($id), unsafe { &core::ptr::read_unaligned(core::ptr::addr_of!(self.$id))}))*
+                 .finish()
+            }
+        }
     };
 
     // Add fields (offset must be in parentheses for clean parsing)
